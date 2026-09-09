@@ -1,9 +1,14 @@
-const mrWeekdays=['रविवार','सोमवार','मंगळवार','बुधवार','गुरुवार','शुक्रवार','शनिवार'];
-const mrMonths=['जानेवारी','फेब्रुवारी','मार्च','एप्रिल','मे','जून','जुलै','ऑगस्ट','सप्टेंबर','ऑक्टोबर','नोव्हेंबर','डिसेंबर'];
-function devDigits(v){return String(v).replace(/\d/g,d=>'०१२३४५६७८९'[d]);}
-function marathiDate(date=new Date()){return `${mrWeekdays[date.getDay()]}, ${devDigits(date.getDate())} ${mrMonths[date.getMonth()]} ${devDigits(date.getFullYear())}`;}
-function setDates(){document.querySelectorAll('[data-current-date]').forEach(el=>el.textContent=marathiDate());}
-function copyLink(){navigator.clipboard?.writeText(location.href).then(()=>alert('लिंक कॉपी झाला आहे.')).catch(()=>{});}
-function shareNews(){if(navigator.share){navigator.share({title:document.title,url:location.href}).catch(()=>{});}else copyLink();}
-function toggleSearch(){document.querySelector('.searchbox')?.classList.toggle('show');document.querySelector('.searchbox input')?.focus();}
-document.addEventListener('DOMContentLoaded',setDates);
+const mrDigits=s=>String(s).replace(/[0-9]/g,d=>'०१२३४५६७८९'[d]);
+function initDate(){const el=document.getElementById('current-date');if(!el)return;const d=new Date(), days=['रविवार','सोमवार','मंगळवार','बुधवार','गुरुवार','शुक्रवार','शनिवार'], months=['जानेवारी','फेब्रुवारी','मार्च','एप्रिल','मे','जून','जुलै','ऑगस्ट','सप्टेंबर','ऑक्टोबर','नोव्हेंबर','डिसेंबर'];el.textContent=`${days[d.getDay()]}, ${mrDigits(d.getDate())} ${months[d.getMonth()]} ${mrDigits(d.getFullYear())}`}
+function copyLink(){navigator.clipboard?.writeText(location.href).then(()=>alert('लिंक कॉपी झाली आहे.')).catch(()=>alert('लिंक कॉपी करता आली नाही.'))}
+function shareNews(){if(navigator.share) navigator.share({title:document.title,url:location.href}).catch(()=>{}); else copyLink()}
+function initLogin(){document.getElementById('loginForm')?.addEventListener('submit',e=>{e.preventDefault();const u=document.getElementById('username').value.trim(),p=document.getElementById('password').value;if(u&&p){localStorage.setItem('metrocity_logged_in','1');localStorage.setItem('metrocity_reporter',u);location.href='admin.html'}else document.getElementById('loginError').hidden=false})}
+function initAdmin(){initDate();renderDrafts();document.getElementById('newsForm')?.addEventListener('submit',publishNews)}
+function readForm(){return {id:Date.now(),category:category.value,location:document.getElementById('location').value.trim(),headline:headline.value.trim(),subheadline:subheadline.value.trim(),reporter:document.getElementById('reporter').value.trim()||localStorage.getItem('metrocity_reporter')||'मेट्रोसिटी पोस्ट प्रतिनिधी',content:content.value.trim(),layout:document.querySelector('input[name="layout"]:checked')?.value||'auto',savedAt:new Date().toISOString()}}
+function getDrafts(){return JSON.parse(localStorage.getItem('metrocity_drafts')||'[]')}
+function saveDraft(){const n=readForm();if(!n.headline||!n.content){showStatus('मथळा आणि बातमीचा मजकूर भरा.',true);return}const a=getDrafts().filter(x=>x.headline!==n.headline);a.unshift(n);localStorage.setItem('metrocity_drafts',JSON.stringify(a));showStatus('मसुदा जतन झाला.');renderDrafts()}
+function publishNews(e){e.preventDefault();const n=readForm();if(!n.headline||!n.content){showStatus('मथळा आणि बातमीचा मजकूर भरा.',true);return}const published=JSON.parse(localStorage.getItem('metrocity_published')||'[]');n.publishedAt=new Date().toISOString();published.unshift(n);localStorage.setItem('metrocity_published',JSON.stringify(published));localStorage.setItem('metrocity_latest',JSON.stringify(n));showStatus('बातमी प्रकाशित झाली. हा सध्या ब्राउझर-डेमो प्रकाशन प्रवाह आहे; वास्तविक ऑनलाइन प्रकाशनासाठी पुढील टप्प्यात डेटाबेस जोडू.');document.getElementById('newsForm').reset();renderDrafts()}
+function renderDrafts(){const el=document.getElementById('draftList');if(!el)return;const a=getDrafts();el.innerHTML=a.length?a.map(x=>`<div class="draft-item"><b>${escapeHtml(x.headline)}</b><span>${escapeHtml(x.category)} · ${escapeHtml(x.location||'')}</span></div>`).join(''):'मसुदे उपलब्ध नाहीत.'}
+function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function showStatus(t,error=false){const el=document.getElementById('status');if(!el)return;el.hidden=false;el.textContent=t;el.className='status'+(error?' error':'')}
+function logout(){localStorage.removeItem('metrocity_logged_in');location.href='login.html'}
