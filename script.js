@@ -1,0 +1,1 @@
+function shareNews(){if(navigator.share){navigator.share({title:document.title,url:location.href}).catch(()=>{});}else{copyLink();alert("लिंक कॉपी केला आहे.");}}function copyLink(){navigator.clipboard?.writeText(location.href);}function demoLogin(e){e.preventDefault();location.href="admin.html";}
